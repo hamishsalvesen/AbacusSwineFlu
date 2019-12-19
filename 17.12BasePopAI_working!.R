@@ -119,14 +119,8 @@ SPFpop <- BasePop(9000, indexSD, AgeDist)  #### creates base population of piggy
   ProdPop <- data.frame(matrix(ncol = 11, nrow = 0))
   colnames(ProdPop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
   
-  Prod_Females <- data.frame(matrix(ncol = 11, nrow = 0))
-  colnames(Prod_Females) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
-  
   MultPop <- data.frame(matrix(ncol = 11, nrow = 0))
   colnames(MultPop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
-  
-  Mult_Females <- data.frame(matrix(ncol = 11, nrow = 0))
-  colnames(Mult_Females) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
   
   BWpop <- data.frame(matrix(ncol = 11, nrow = 0))
   colnames(BWpop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
@@ -136,15 +130,13 @@ SPFpop <- BasePop(9000, indexSD, AgeDist)  #### creates base population of piggy
   
   for (g in -60:0){
   
-littersize <- 12 ###consider function for changing the littersize and having a fertilisation proportion ###
-    
       print(paste0("Gen:", g, sep = " "))
     
     ### select top 25% of eligible breeding females
     
     ### select males from top percentage. Should leave other breeding age pigs for below tiers
-    BreedSPFA_Male <- SPFpop %>% filter (sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit) 
-    BreedSPFA_Fem <- filter(SPFpop, sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem)  %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
+    BreedSPFA_Male <- SPFpop %>% filter (sex == "M" & herd == "A" & age >= AgeFirstMate) %>% top_frac(0.05, merit) 
+    BreedSPFA_Fem <- filter(SPFpop, sex == "F" & herd == "A" & age >= AgeFirstMate & age %% FarrowInt == rem)  %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
     
     newGenSPFNucA <- CreatePiglets(BreedSPFA_Male, BreedSPFA_Fem, indexSD, g, paste0("SPFA",g,"_"), littersize)
     
@@ -153,8 +145,8 @@ littersize <- 12 ###consider function for changing the littersize and having a f
     
     
     ##### separate into B herd ###########
-    BreedSPFB_Male <- SPFpop %>% filter (sex == "M" & herd == "B") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit) 
-    BreedSPFB_Fem <- filter(SPFpop, sex == "F" & herd == "B") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
+    BreedSPFB_Male <- SPFpop %>% filter (sex == "M" & herd == "B" & age >= AgeFirstMate) %>% top_frac(0.05, merit) 
+    BreedSPFB_Fem <- filter(SPFpop, sex == "F" & herd == "B" & age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
     
     newGenSPFNucB <- CreatePiglets(BreedSPFB_Male, BreedSPFB_Fem, indexSD, g, paste0("SPFB",g,"_"), littersize)
     
@@ -163,8 +155,8 @@ littersize <- 12 ###consider function for changing the littersize and having a f
     
     
     ##### separate into T herd ###########
-    BreedSPFT_Male <- SPFpop %>% filter (sex == "M" & herd == "T") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit) 
-    BreedSPFT_Fem <- filter(SPFpop, sex == "F" & herd == "T") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem ) %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
+    BreedSPFT_Male <- SPFpop %>% filter (sex == "M" & herd == "T" & age >= AgeFirstMate) %>% top_frac(0.05, merit) 
+    BreedSPFT_Fem <- filter(SPFpop, sex == "F" & herd == "T" & age >= AgeFirstMate & age %% FarrowInt == rem ) %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
     
     newGenSPFNucT <- CreatePiglets(BreedSPFT_Male, BreedSPFT_Fem, indexSD, g, paste0("SPFT",g,"_"), littersize)
 
@@ -179,26 +171,28 @@ littersize <- 12 ###consider function for changing the littersize and having a f
     ### will rejoin SPFpop at end of code incase they are no longer in top % for mating and can be used in below tiers  
     ### males are not removed as they can inseminate multiple tiers through an AI program
     
+    
     print(paste0("SPF Males:", sum(SPFpop$sex == "M"), sep = " "))
     print(paste0 ("SPF Females:", sum(SPFpop$sex =="F"), sep = " "))
     
     
 if (g >= -40){ #### selecting all the breeding sows above removes the breeders for Prod breeding. Need to select elsewhere ###
   
+  
   SPFpop <-  anti_join(SPFpop, SPF_Breeders, by = "ID") ## removes breeding SPF breeding animals from SPF pop,
        # selection will exclude nucleus breeding animals ## keeps out for mult & BW tier 
   
-  SPF_ProdPop_Fem <- SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.25, merit) #takes away top 25% for PN 
+  SPF_ProdPop_Fem <- SPFpop %>% filter(sex == "F" & herd == "A" & age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.25, merit) #takes away top 25% for PN 
   SPFpop <-  anti_join(SPFpop, SPF_ProdPop_Fem, by = "ID") ## SPF pop loses the animals transferred to prod pop. Not reintegrated and cannot be used in SPF in future 
   
-  SPF_ProdPop_Males <- SPFpop %>% filter(sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.1, merit) #takes top 10% available boars
+  SPF_ProdPop_Males <- SPFpop %>% filter(sex == "M" & herd == "A" & age >= AgeFirstMate) %>% top_frac(0.1, merit) #takes top 10% available boars
   #SPFpop <-  anti_join(SPFpop, SPF_ProdPop_Males, by = "ID") ## removes prod pop males from the SPFpop #can't be reused in SPFpop ### don't need as AI is performed on SPF pops
 
   ProdPop <- rbind.fill(ProdPop, SPF_ProdPop_Fem) ### No males from SPF stored as used by AI. Only PN bred males will be in PN ######
   
-  Prod_Males <- rbind.fill(ProdPop, SPF_ProdPop_Males) %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) %>% top_frac(0.15, merit) # selects for males from ProdPop and SPF Nucleus ## never integrated with full ProdPop
-  Prod_Females <- ProdPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate, age %% FarrowInt == rem) %>% top_frac(0.5, merit) ### already over age first mate, ensure they are correct farrowing interval. 
-
+  Prod_Males <- rbind.fill(ProdPop, SPF_ProdPop_Males) %>% filter(sex == "M") # selects for males from ProdPop and SPF Nucleus
+  Prod_Females <- ProdPop %>% filter(sex == "F" & age %% FarrowInt == rem) ### already over age first mate, ensure they are correct farrowing interval. 
+  
   NewProdPop <- CreatePiglets(Prod_Males, Prod_Females, indexSD, g, paste0("Prod",g,"_"), littersize)
   
   NewProd_Females <- NewProdPop %>% filter(sex == "F") %>% top_frac(0.2, merit) ## takes the top 20% of new females created, all that is required. #### increase if I want more PN breeding ###
@@ -215,29 +209,30 @@ if (g >= -40){ #### selecting all the breeding sows above removes the breeders f
 if (g >= -25){
   
   ### A or B females as can be bred within mult tier or from prod?? ## no transfer of Mult pigs back into breeding data frame so only A females used, piglets will be B herd. 
+ ### add in operator to coerce ID to be a character vector for below
+  #ProdPop <-  anti_join(ProdPop, Prod_Females, by = "ID") ### removes breeding ProdPop animals before selecting for MultPop. 
   ### Need to make sure Prod_Females are put back into ProdPop at the end of generation! 
   
-  Prod_Females <- mutate(ProdPop, ID = as.character(ID))  ### add in operator to coerce ID to be a character vector for below
+  Prod_MultPop_Females <- ProdPop %>% filter(sex == "F" & herd == "A" | herd == "B" & age >= AgeFirstMate) %>% top_frac(0.5, merit) #selects top 50% for mult tier from Prod. 
+  MultPop_Fem_Breed <- filter(Prod_MultPop_Females, age %% FarrowInt == rem) #already filtered on age and merit
   
-  ProdPop <- anti_join(ProdPop, Prod_Females, by = "ID") ## removes pigs bred in ProdPop from being bred again in same generation ## should only be top 50% of breeding animals
+  SPF_MultPop_Males <- SPFpop %>% filter(sex == "M" & herd == "B", age >= AgeFirstMate) %>% top_frac(0.1, merit) #takes top 10% available boars, SPF pop excluded.## breeders removed above
+  #SPFpop <-  anti_join(SPFpop, SPF_MultPop_Males, by = "ID") ## removes mult pigs from SPF pop 
   
-  Prod_MultPop_Females <- ProdPop %>% filter(sex == "F" & herd == "A" | herd == "B") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.5, merit) #selects top 50% for mult tier from Prod. 
-  ProdPop <- anti_join(ProdPop, Prod_MultPop_Females, by = "ID") ## removes pigs transferred down to multpop from ProdPop permanently
+  ProdPop <- anti_join(ProdPop, MultPop_Fem_Breed, by = "ID") ## removes pigs transferred down to multpop from ProdPop permanently
   
-  SPF_MultPop_Males <- SPFpop %>% filter(sex == "M" & herd == "B") %>% filter(age >= AgeFirstMate) %>% top_frac(0.1, merit) #takes top 10% available boars, SPF pop excluded.## breeders removed above
-  SPFpop <-  anti_join(SPFpop, SPF_MultPop_Males, by = "ID") ## removes mult pigs from SPF pop 
+  MultPop <- rbind.fill(MultPop, MultPop_Fem_Breed, SPF_MultPop_Males) #puts new Multpop with new piglets from SPF & Prod. Are these females now permanently in this tier?
   
-  MultPop <- rbind.fill(MultPop, Prod_MultPop_Females, SPF_MultPop_Males) #puts new Multpop with new piglets from SPF & Prod. Males are moved as not AI
-  
-  Mult_Males <- MultPop %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) ### are these required ??? #### maybe to keep the pigs that have been put into these herds.. ###
-  Mult_Females <- MultPop %>% filter(sex == "F") %>% filter (age >= AgeFirstMate & age %% FarrowInt == rem) ## probably best to filter for age here, not realistic to redo it for each cycle ##
+  Mult_Males <- MultPop %>% filter(sex == "M") ### are these required ??? #### maybe to keep the pigs that have been put into these herds.. ###
+  Mult_Females <- MultPop %>% filter(sex == "F" & age %% FarrowInt == rem) ## probably best to filter for age here, not realistic to redo it for each cycle ##
   
   NewMultPop <- CreatePiglets(Mult_Males, Mult_Females, indexSD, g, paste0("Mult",g,"_"), littersize)
   
   NewMult_Females <- NewMultPop %>% filter(sex == "F") %>% top_frac(0.25, merit) ## takes the top 20% of new females created, all that is required. #### increase if I want more PN breeding ###
   NewMult_Males <- NewMultPop %>% filter(sex == "M") %>% top_frac(0.05, merit) ## top 10%% of new males are added to the production population
   
-  MultPop <- rbind.fill(MultPop, NewMult_Females, NewMult_Males)
+  MultPop <- rbind.fill(MultPop, NewMultPop, NewMult_Females, NewMult_Males)
+  MultPop <- MultPop %>% filter(sex == "F")
 
   print(paste0("Mult Males:", sum(MultPop$sex == "M"), sep = " "))
   print(paste0 ("Mult Females:", sum(MultPop$sex =="F"), sep = " "))
@@ -249,28 +244,27 @@ if (g >= -25){
   
   if (g >= -10){
     
-    Mult_Females <- mutate(MultPop, ID = as.character(ID))  ### add in operator to coerce ID to be a character vector for below
+    MultPop <-  anti_join(MultPop, MultPop_Fem_Breed, by = "ID") #### keep mult pop females that have bred out of potential BW pop
     
-    MultPop <-  anti_join(MultPop, Mult_Females, by = "ID") #### keep mult pop females that have bred out of potential BW pop
-    
-    Mult_BW_Fem <- MultPop %>% filter(sex == "F" & herd == "B" | herd =="A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.7, merit) ### need to be creaming off the percentage and not returning!!! 
-    MultPop <- anti_join(MultPop, Mult_BW_Fem, by = "ID") ## removes pigs transferred down to BWpop from MultPop permanently
-    ## no A herd as they must have been bred in Mult tier ### no T herd either as the piglets are transferred directly to commercial tier?#
+    BW_Fem <- MultPop %>% filter(sex == "F" & herd == "B" | herd =="A" & age >= AgeFirstMate) %>% top_frac(0.7, merit) ### need to be creaming off the percentage and not returning!!! 
+    ## no A herd as they must have been bred in Multt tier ### no T herd either as the piglets are transferred directly to commercial tier ###
    
-    SPF_BWpop_Males <- SPFpop %>% filter(sex == "M" & herd == "T") %>% filter(age >= AgeFirstMate) %>% top_frac(0.1, merit) #take away top 2% for SPF breeding, select next 10% for PN 
-    SPFpop <-  anti_join(SPFpop, SPF_MultPop_Males, by = "ID") ##no returning pigs as not an AI program
+    #### not selecting correctly here.... 
+    Mult_BW_Fem_Breed <- BW_Fem %>% filter(age %% FarrowInt == rem) ## probably best to filter for age here, not realistic to redo it for each cycle ## No BW_Fem_Breed as filtered here
     
-    BWpop <- rbind.fill(BWpop, Mult_BW_Fem_Breed, SPF_BWpop_Males) ## put multipler females into BW population
+    SPF_BWpop_Males <- SPFpop %>% filter(sex == "M" & herd == "T" & age >= AgeFirstMate) %>% top_frac(0.1, merit) #take away top 2% for SPF breeding, select next 10% for PN 
+    #SPFpop <-  anti_join(SPFpop, SPF_MultPop_Males, by = "ID") ## returns all the pigs in SPFpop that are not present in SPF_ProdNuc_Breeders_M
     
-    BW_Fem_Breed <- BWpop %>% filter(sex == "F" & age %% FarrowInt == rem)
-    BW_Males <- BWpop %>% filter(sex == "M")
+    BWpop <- rbind.fill(BWpop, Mult_BW_Fem_Breed) ## put multipler females into BW population
+    
+    BW_Fem_Breed <- BWpop %>% filter(sex == "F", age %% FarrowInt == rem)
 
+    MultPop <- anti_join(MultPop, Mult_BW_Fem_Breed, by = "ID") ### remove BW bred females, leave rest in multPop
+    
+    MultPop <- rbind.fill(MultPop, MultPop_Fem_Breed) ### rejoin bred multpop females for next generation ###
+    
     CommercialPop <- CreatePiglets(SPF_BWpop_Males, BW_Fem_Breed, indexSD, g, paste0("BW",g,"_"), littersize) #piglets will be T herd, females from B herd. 
     ### maybe transfer BW males and retain some BW females for breeding if they are of better merit than piglets born??? ###
-    
-    NewBW_Females <- CommercialPop %>% filter(sex == "F") %>% top_frac(0.1, merit) ## takes the top 20% of new females created, all that is required. #### increase if I want more PN breeding ###
-
-    BWpop <- rbind.fill(BWpop, NewBW_Females)
     
     ## maybe need culling function to remove low perfroming animals. May also not need population max as these animals are passed to the commercial breeders for growing. 
     
@@ -288,7 +282,8 @@ if (g >= -25){
     
     #MultPop <- rbind.fill(MultPop, MultPop_Fem_Breed) ###puts breeders back into MultPop. Can't be selected above, needed in table for selection
     
-
+    #ProdPop <- rbind.fill(ProdPop, ProdPop_Fem_Breed) ### males for prod pop are taken each time from SPF_A. Should I set this to retain some males??
+    
   }
   
     
@@ -345,46 +340,37 @@ if (g >= -25){
     
     ########################
   
-  ### need to have ProdPop breeders merged into daat frame before this selection step ### may be too many!!!
- if (sum(ProdPop$age > 8) > 33000){
+  ### need to have ProdPop breeders merged into daat frame before this selection step
+ if (nrow(ProdPop) > 33000){
    ProdPopFem <- ProdPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate) %>% top_n(33000, merit) ### filter breeding animals o ensure they remain ### this code works!!!
   ProdPopMales <- ProdPop %>% filter (sex == "M") %>% filter(age > AgeFirstMate) %>% top_n(800, merit)
-  ProdPopPiglets <- ProdPop %>% filter(sex == "F") %>% filter(age < AgeFirstMate & age >= 1) %>% top_n(15000, merit)
+  ProdPopPiglets <- ProdPop %>% filter(sex == "F") %>% filter(age < AgeFirstMate, age >= 1) %>% top_n(15000, merit)
   ProdPop <- rbind.fill(ProdPopFem, ProdPopMales, ProdPopPiglets) ### males for prod pop are taken each time from SPF_A. Should I set this to retain some males??
  }
-    
- # ProdPop <- rbind.fill(ProdPop, Prod_Females)  %>% distinct() #### may need to make prod females table
-   
   ProdPop <- data.frame(ageing(ProdPop)) 
   
  # ProdPop <- anti_join (ProdPop, SPFpop, by = "ID") ## no animals should be able to exist in both tiers. Checks females, males are not transferred as it is an AI program. 
   #############
   
   ## sows bred from already rejoined to data frame
-  if (sum(MultPop$age > 8) > 80000) {  ### may be too many!!!
   MultPopFem <- MultPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate) %>% top_n(80000, merit)
   MultPopMales <- MultPop %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) %>% top_n(10000, merit)
-  MultPopPiglets <- MultPop %>% filter(sex == "F") %>% filter(age < AgeFirstMate & age >= 1) %>% top_n(20000, merit) ### may be better to transfer down, let them age, and then determine whether to breed
+  MultPopPiglets <- MultPop %>% filter(sex == "F") %>% filter(age < AgeFirstMate, age >= 1) %>% top_n(20000, merit) ### may be better to transfer down, let them age, and then determine whether to breed
   MultPop <- rbind.fill(MultPopFem, MultPopMales, MultPopPiglets) ### combines all piglets in or from Multpop for next generation selection
-  }
-  
-  #MultPop <- rbind.fill(Mult_Females, MultPop) %>% distinct() #### may need to make mult females table
   
   MultPop <- ageing(MultPop)
   
  # MultPop <- anti_join(MultPop, ProdPop, by = "ID") ## ensures there is no cross over between tiers
   ### remerge multpop breeders so they can be used again??
-  if (sum(BWpop$age > 8) > 150000) {  ### may be too many!!!
-    
+  
   BWpopFem <- BWpop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate) %>% top_n(100000, merit)
   BWpopMales <- BWpop %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) %>% top_n(10000, merit)
-  BWpopPiglets <- BWpop %>% filter(sex == "F") %>% filter(age < AgeFirstMate & age >= 1) %>% top_n(20000, merit) ### may be better to transfer down, let them age, and then determine whether to breed
+  BWpopPiglets <- BWpop %>% filter(sex == "F") %>% filter(age < AgeFirstMate, age >= 1) %>% top_n(20000, merit) ### may be better to transfer down, let them age, and then determine whether to breed
   BWpop <- rbind.fill(BWpopFem, BWpopMales, BWpopPiglets) ### combines all piglets in or from Multpop for next generation selection
-  }
   
   BWpop <- ageing(BWpop)
   
-  BWpop <- anti_join(BWpop, MultPop, by = "ID") ## ensures there is no cross over between tiers
+ # BWpop <- anti_join(BWpop, MultPop, by = "ID") ## ensures there is no cross over between tiers
   
   ### remerge BWpop breeders so they can be used again??
   
