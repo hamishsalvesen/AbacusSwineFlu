@@ -390,10 +390,13 @@ if (g >= -25){
  # BWpop <- anti_join(BWpop, MultPop, by = "ID") %>% mutate(ID = as.character(ID))## ensures there is no cross over between tiers
   ### remerge BWpop breeders so they can be used again??
   
+  Allpop <- rbind.fill(SPFpop, ProdPop, MultPop, BWpop) # doesn't include dying pigs and designate as dead. missing pigs!
   
-  Allpop <- rbind.fill (SPFpop, ProdPop, MultPop, BWpop)
+  if (g > -61) {
+  Allpop2 <- data.frame(Allpop)}
+  else {Allpop = rbind.fill(Allpop2, Allpop)
+  }
    
-  # CommercialPop <- BWpop
   }
 
   ### have anti joins for SPF vs Prod, Prod Vs mult and mult Vs BW to ensure no cross over in pig populations???? #####3
