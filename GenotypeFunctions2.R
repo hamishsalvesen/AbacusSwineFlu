@@ -2,11 +2,32 @@ edit_genes <- function(animals, edit_prop = 0.0, edit_type, edit_trials, embryo_
   # gene editing workflow
   #     0.0. Subset individuals that would have to be edited
   # Check and see if we have recessives to edit.
-  ToEdit <- filter(popdata, genoA == "AA" | "Aa" | "aA")
-  Others <- filter (popdata , genoA == "aa")
+  A_ToEdit <- filter(SPFpop, genoA %in% c("AA", "Aa", "aA"))
+  A_Others <- filter (SPFpop , genoA == "aa")
   
   #     0.1. Sort individuals based on merit to identify the top animals to edit
-  SPFpopEdit <- arrange(SPFpop, desc(merit)) ## selection criteria for pigs to be edited. May need to be applied to males or females
+  A_ToEdit <- arrange(A_ToEdit, desc(merit)) ## selection criteria for pigs to be edited. May need to be applied to males or females
+  #A_ToEdit <- strsplit(A_ToEdit$genoA, 2)
+  
+  A_ToEdit <- separate(A_ToEdit, genoA, into = c("Allele1", "Allele2"), sep = "", remove = TRUE) %>% mutate(Allele1 = as.character(Allele1), Allele2 = as.character(Allele2))
+  SPFpopEditA1 <- SPFpopEdit  %>% filter(Allele1 == "A") ## need to select at the same time as genes are in the same pig vessel
+  SPFpopEditA2 <- SPFpopEdit  %>% filter(Allele2 == "A") ## need to select at the same time as genes are in the same pig vessel
+  
+  ### filter or select pigs eligible for editing ## filter for piglets at -3 then can put in after CreatePiglets
+  
+  ## Select proportion of piglets for relevant editing efficiency. #Can do separately as alleles are independently edited?
+  SPFpopEditA1 <- sample_frac(SPFpopEdit, 0.7, replace = FALSE)
+  SPFpopEditA2 <- sample_frac(SPFpopEdit, 0.7, replace = FALSE)
+  
+  SPFpopEditA1$Allele1 <- tolower(SPFpopEditA1$Allele1)
+  SPFpopEditA1$Allele2 <- NULL
+  SPFpopEditA2$Allele2 <- tolower(SPFpopEditA2$Allele2) ### apply to and retain in retain in data frame
+  SPFpopEditA2$Allele1 <- NULL
+  
+  ### need to add the column of Allele2 data to allele1
+  
+  #SPFpopEdit$genoA <- NULL ### removed in separate function
+  SPFpopEdit <- SPFpopEdit %>% unite(col = genoA, c(Allele1, Allele2), sep = "/", remove = TRUE)
   
   # For each recessive to be edited:
   #     1. Select the top edit_prop proportion of animals, currently at least 1 animal always will be edited
