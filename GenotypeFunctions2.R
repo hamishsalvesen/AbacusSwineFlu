@@ -1,39 +1,35 @@
 edit_genes <- function(animals) { 
-  # gene editing workflow
-  #     0.0. Subset individuals that would have to be edited
-  # Check and see if we have recessives to edit.
+ 
   A_ToEdit <- filter(SPFpop, genoA %in% c("A/A", "A/a", "a/A"))
   A_Others <- filter (SPFpop , genoA == "a/a")
   
   ## Change to piglets for function format
   if (nrow(A_ToEdit) > 1){
-# Split_A_ToEdit <- strsplit(A_ToEdit$genoA, 2) 
-### need to Strspilt, unnest, add seperated columns
-  
+
 A_ToEdit <- separate(A_ToEdit, genoA, into = c("Allele1", "Allele2"), sep = "/", remove = TRUE) %>% mutate(Allele1 = as.character(Allele1), Allele2 = as.character(Allele2))
   
-#     0.1. Sort individuals based on merit to identify the top animals to edit
-A_ToEdit <- arrange(A_ToEdit, desc(merit)) #%>% top_frac(0.5) ## selection criteria for pigs to be edited. May need to be applied to males or females
-  ##filter out top_frac if only certain animals are to be edited? filter sires/dams or piglets born?
+#  SELECTION OF PIGS ON MERIT ## would need to be on sires and dams the selection, not on the progeny
+# A_ToEdit <- arrange(A_ToEdit, desc(merit)) #%>% top_frac(0.5) ## selection criteria for pigs to be edited. May need to be applied to males or females
+# filter out top_frac if only certain animals are to be edited? filter sires/dams or piglets born?
 
-###need to have 'if' for only editing A alleles and keping a in the table
-
-A_ToEditA1 <- A_ToEdit  %>% filter(Allele1 == "A") ## need to select at the same time as genes are in the same pig vessel
-A_ToEditA1$Allele2 <- NULL ### individual alleles are edited
-A_ToEditA2 <- A_ToEdit  %>% filter(Allele2 == "A") ## need to select at the same time as genes are in the same pig vessel
+### need to split table as selection of allele2 must draw from animals with big or little A/a
+A_ToEditA1 <- A_ToEdit  %>% filter(Allele1 == "A") %>% sample_frac(0.7, replace = FALSE)## need to select at the same time as genes are in the same pig vessel
+A_ToEditA1$Allele1 <- tolower(A_ToEditA1$Allele1) ## use pipe for putting through and avoid splitting table?
+A_ToEditA1$Allele2 <- NULL
+A_ToEditA2 <- A_ToEdit  %>% filter(Allele2 == "A") %>% sample_frac(0.7, replace = FALSE) ## need to select at the same time as genes are in the same pig vessel
+A_ToEditA2$Allele2 <- tolower(A_ToEditA2$Allele2) ## use pipe for putting through and avoid splitting table?
 A_ToEditA2$Allele1 <- NULL
 
-  ### filter or select pigs eligible for editing ## filter for piglets at -3 then can put in after CreatePiglets
-  ##rbind A_others with A_toEdit tables  
+A_ToEditA1 <- arrange(A_ToEditA1, desc(ID)) 
+A_ToEditA2 <- arrange(A_ToEditA2, desc(ID)) 
 
-  ## Select proportion of piglets for relevant editing efficiency. #Can do separately as alleles are independently edited?
-A_ToEditA1 <- sample_frac(A_ToEditA1, 0.7, replace = FALSE)
-A_ToEditA2 <- sample_frac(A_ToEditA2, 0.7, replace = FALSE) ## random selection of alleles to edit. Essentially editing efficiency proxy
-## need to save the other 30% and remerge below  
+A_ToEditJoin <- join(A_ToEditA1, A_ToEditA2, by = "ID")
 
-A_ToEditA1$Allele1 <- tolower(A_ToEditA1$Allele1) ## use pipe for putting through and avoid splitting table?
-A_ToEditA2$Allele2 <- tolower(A_ToEditA2$Allele2) ### apply to and retain in retain in data frame
-### need to merge the column of Allele2 data to allele1
+### need to rejoin unedited alleles here. Should be heterozygotes with only one allele succesfully edited
+
+SPFpopEdited <- A_ToEdit %>% unite(col = genoA, c(Allele1, Allele2), sep = "/", remove = TRUE) ## remerge alleles columns ### need to merge the column of Allele2 data to allele1
+
+SPFpop <- anti_join(SPFpop, A_ToEdit, by = "ID") ### add in edited animals and overwrite previous unedited rows. Recreate data frame with succuseful editing, unsuccesful editing
 
 ## want to superimpose new alleles list on top of the A_ToEdit table
 ## Add new alleles data over the old alleles in the table. Bind others with edited allele data
@@ -44,6 +40,7 @@ SPFpopEdit <- full_join(A_ToEditA1, A_ToEditA2, by = "ID")
 ## want to join allele2 column to the rest of the table. 
 
 SPFpopEdit <- SPFpopEdit %>% unite(col = genoA, c(Allele1, Allele2), sep = "/", remove = TRUE)
+SPFpop <- rbind(SPFpopEdit, A_Others) ## may need to use join function to make sure no duplicates 
 
 } ## end of if function
   
