@@ -23,13 +23,22 @@ A_ToEditA2$Allele1 <- NULL
 A_ToEditA1 <- arrange(A_ToEditA1, desc(ID)) 
 A_ToEditA2 <- arrange(A_ToEditA2, desc(ID)) 
 
-A_ToEditJoin <- join(A_ToEditA1, A_ToEditA2, by = "ID")
+A_ToEditJoinA1 <- A_ToEditA1 %>% dplyr::select(ID, Allele1)
+A_ToEditJoinA2 <- A_ToEditA2 %>% dplyr::select(ID, Allele2)
+
+A_ToEditJoin <- A_ToEdit %>% left_join (A_ToEditJoinA1, by = "ID") %>% left_join(A_ToEditJoinA2, by = "ID") %>% dplyr::select(-genoA)
+A_ToEditJoin [c("Allele1", "Allele2")][is.na(A_ToEditJoin[c("Allele1", "Allele2")])] <- "A"
+
+A_ToEditJoin <- A_ToEditJoin %>% unite(col = genoA, c(Allele1, Allele2), sep = "/", remove = TRUE) ## remerge alleles columns ### need to merge the column of Allele2 data to allele1
+
+A_ToEditJoin <- merge(A_ToEditA1, A_ToEditA2, by = "ID", no.dups = TRUE, all = TRUE)
+A_ToEditJoin [c("Allele1", "Allele2")][is.na(A_ToEditJoin[c("Allele1", "Allele2")])] <- "A"
+A_ToEditJoin <- A_ToEditJoin %>% unite(col = genoA, c(Allele1, Allele2), sep = "/", remove = TRUE) ## remerge alleles columns ### need to merge the column of Allele2 data to allele1
 
 ### need to rejoin unedited alleles here. Should be heterozygotes with only one allele succesfully edited
 
-SPFpopEdited <- A_ToEdit %>% unite(col = genoA, c(Allele1, Allele2), sep = "/", remove = TRUE) ## remerge alleles columns ### need to merge the column of Allele2 data to allele1
 
-SPFpop <- anti_join(SPFpop, A_ToEdit, by = "ID") ### add in edited animals and overwrite previous unedited rows. Recreate data frame with succuseful editing, unsuccesful editing
+SPFpop1 <- rbind(A_Others, A_ToEditJoin, by = "ID") ### add in edited animals and overwrite previous unedited rows. Recreate data frame with succuseful editing, unsuccesful editing
 
 ## want to superimpose new alleles list on top of the A_ToEdit table
 ## Add new alleles data over the old alleles in the table. Bind others with edited allele data
