@@ -145,6 +145,9 @@ littersize <- 12 ###consider function for changing the littersize and having a f
       
       
     ### select males from top percentage. Should leave other breeding age pigs for below tiers
+    SPF_Gilts <- SPFpop %>% filter(age = AgeFirstMate)  
+    ### remove = sign from other Fem selection. create new SPF$Conception col. random distribution for 85%, assign to 1 in new col. if 1 then add to fem breed 
+      
     BreedSPFA_Male <- SPFpop %>% filter (sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit) 
     BreedSPFA_Fem <- filter(SPFpop, sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem)  %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
     

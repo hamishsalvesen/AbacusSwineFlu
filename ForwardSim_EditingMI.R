@@ -6,15 +6,13 @@
 ### add in selection for genotype to dams and boars criteria. If not enough of edited genotype, select from non resistant
 ### Also have selecting from all according to merit and edit a top proportion
 
+### should save basepop burn in then retrieve file at the start here. 
 
-for (g in 0:100){
-  
-  littersize <- 12 ###consider function for changing the littersize and having a fertilisation proportion ###
+for (g in 0:10){
   
   print(paste0("Gen:", g, sep = " "))
   
   ### select top 25% of eligible breeding females
-  
   
   ### select males from top percentage. Should leave other breeding age pigs for below tiers
   BreedSPFA_Male <- SPFpop %>% filter (sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit) 
@@ -22,22 +20,21 @@ for (g in 0:100){
   
   newGenSPFNucA <- CreatePiglets(BreedSPFA_Male, BreedSPFA_Fem, indexSD, g, paste0("SPFA",g,"_"), littersize)
   
-  newGenSPFNucA <- edit_genes(newGenSPFNucA) ### editing of piglets - done to zygotes but is easier to code post creation
-  print(paste0 ("SPFB_Resistance:", nrow(filter(popdata, genoA == "a/a")))) 
+  newGenSPFNucA <- edit_genes(newGenSPFNucA, 0.6, 0.6) ### editing of piglets - done to zygotes but is easier to code post creation
   
   SPFNucA_Fem <- filter(newGenSPFNucA, sex == "F")  %>% top_frac(0.2, merit) #### maybe need ageDist to make sure pigs of all ages are selected ### 
   SPFNucA_Male <- filter(newGenSPFNucA, sex == "M") %>% top_frac (0.05, merit)
   
   
   ##### separate into B herd ###########
+  ### could avoid editing in B herd as there will be flow down from prodpop to multpop and hets can then breed with T hets...
   BreedSPFB_Male <- SPFpop %>% filter (sex == "M" & herd == "B") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit) 
   BreedSPFB_Fem <- filter(SPFpop, sex == "F" & herd == "B") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
   
   newGenSPFNucB <- CreatePiglets(BreedSPFB_Male, BreedSPFB_Fem, indexSD, g, paste0("SPFB",g,"_"), littersize)
   
-  newGenSPFNucB <- edit_genes(newGenSPFNucB)
-  print(paste0 ("SPFB_Resistance:", nrow(filter(popdata, genoA == "a/a")))) 
-  
+  newGenSPFNucB <- edit_genes(newGenSPFNucB, 0.6, 0.6)
+
   SPFNucB_Fem <- filter(newGenSPFNucB, sex == "F")  %>% top_frac(0.2, merit) #### maybe need ageDist to make sure pigs of all ages are selected ### 
   SPFNucB_Male <- filter(newGenSPFNucB, sex == "M") %>% top_frac (0.05, merit)
   
@@ -48,9 +45,8 @@ for (g in 0:100){
   
   newGenSPFNucT <- CreatePiglets(BreedSPFT_Male, BreedSPFT_Fem, indexSD, g, paste0("SPFT",g,"_"), littersize)
   
-  newGenSPFNucT <- edit_genes(newGenSPFNucT)
-  print(paste0 ("SPFT_Resistance:", nrow(filter(popdata, genoA == "a/a")))) 
-  
+  newGenSPFNucT <- edit_genes(newGenSPFNucT, 0.6, 0.6)
+
   SPFNucT_Fem <- filter(newGenSPFNucT, sex == "F")  %>% top_frac(0.2, merit) #### maybe need ageDist to make sure pigs of all ages are selected ### 
   SPFNucT_Male <- filter(newGenSPFNucT, sex == "M") %>% top_frac (0.05, merit)
   
@@ -183,13 +179,19 @@ for (g in 0:100){
   ### population controls ###
   ## SPF pop retainers need to consider herd distributions with such low numbers initially breeding
   
+  ### constantly flow gene edited animals down the pyramid?
+  ### keep edited animals in SPF, once they are all homozygotes, then flow down?
+  ### different ways of retaining and distributing will affect gene flow ## select on merit and genotype?
+  ### need function for editing the offspirng of topmatings only???
+  
   if (sum(SPFpop$age > 8) > 9000) {
     
     NextBreeders <- SPFpop %>% filter (sex =="F" & age > 9 & age %% FarrowInt == 2) ### filters all pigs that will breed next loop to be included for selection
+    #A_ResistantAllele <- SPFpop %>% filter (genoA %in% "a/a", "a/A", "A/a")
     
-    SPFpopA_females <- SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= 8) %>% top_n(4500, merit) ### same as numbers for initial basepop
-    SPFpopB_females <- SPFpop %>% filter(sex == "F" & herd == "B") %>% filter(age >= 8) %>% top_n(2250, merit) ### not removing females available for breeding in the next generation??? ###
-    SPFpopT_females <- SPFpop %>% filter(sex == "F" & herd == "T") %>% filter(age >= 8) %>% top_n(2250, merit)
+    SPFpopA_females <- SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= 8) %>% filter (genoA %in% "a/a", "a/A", "A/a") %>% top_n(4500, merit) ### same as numbers for initial basepop
+    SPFpopB_females <- SPFpop %>% filter(sex == "F" & herd == "B") %>% filter(age >= 8) %>% filter (genoA %in% "a/a", "a/A", "A/a")%>% top_n(2250, merit) ### not removing females available for breeding in the next generation??? ###
+    SPFpopT_females <- SPFpop %>% filter(sex == "F" & herd == "T") %>% filter(age >= 8) %>% filter (genoA %in% "a/a", "a/A", "A/a")%>% top_n(2250, merit)
     
     SPFpop_males <- SPFpop %>% filter(sex == "M") %>% filter(age >= 8) %>% top_n(500, merit) #### may need to ensure not all old pigs are culled so that there are enough older animals for breeding!
     #SPFpopB_males <- SPFpop %>% filter(sex == "M" & herd == "B") %>% filter(age >= 8) %>% top_n(500, merit) 
@@ -226,6 +228,13 @@ for (g in 0:100){
   
   SPFpop <- data.frame(ageing(SPFpop))  
   
+  print(paste0 ("SPFA_Resistance:", round(nrow(filter(SPFpop, herd == "A" & genoA == "a/a")) / nrow(filter(SPFpop, herd == "A", genoA %in% c("A/A", "A/a", "a/A", "a/a"))) *100), "%"))
+  print(paste0 ("SPFB_Resistance:", round(nrow(filter(SPFpop, herd == "B" & genoA == "a/a")) / nrow(filter(SPFpop, herd == "B" & genoA %in% c("A/A", "A/a", "a/A", "a/a"))) *100), "%"))
+  print(paste0 ("SPFT_Resistance:", round(nrow(filter(SPFpop, herd == "T" & genoA == "a/a")) / nrow(filter(SPFpop, herd == "T" & genoA %in% c("A/A", "A/a", "a/A", "a/a"))) *100), "%"))
+  
+  #print(paste0 ("Commercial Pigs:", nrow(CommercialPop), sep = " "))
+  
+  
   ########################
   
   ### need to have ProdPop breeders merged into daat frame before this selection step ### may be too many!!!
@@ -242,6 +251,8 @@ for (g in 0:100){
   ProdPop <- rbind.fill(ProdPop, Prod_Females) %>% distinct() #### may need to make prod females table
   
   ProdPop <- data.frame(ageing(ProdPop)) 
+  
+  print(paste0 ("ProdPop:", round(nrow(filter(newGenSPFNucA, genoA == "a/a")) / nrow(filter(newGenSPFNucA, genoA %in% c("A/A", "A/a", "a/A", "a/a"))) *100), "%"))
   
   # ProdPop <- anti_join (ProdPop, SPFpop, by = "ID") %>% mutate(ID = as.character(ID)) ## no animals should be able to exist in both tiers. Checks females, males are not transferred as it is an AI program. 
   #############
