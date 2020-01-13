@@ -26,8 +26,8 @@ BasePop <- function(n, indexSD, AgeDist) {
   NucleusA$herd <- sample(c("A", "B", "T"), size = n, replace = TRUE, prob = c(0.5, 0.25, 0.25))
   NucleusA$sex <- sample (c("M", "F"), n, replace = TRUE, prob = c(0.3, 0.7))
   NucleusA$merit <- rnorm(n, mean = 0, sd = indexSD) %>% round(digits = 0) 
-  NucleusA$genoA <- "Rr"
-  NucleusA$genoB <- "Rr"
+  NucleusA$genoA <- "A/A"
+  NucleusA$genoB <- "B/B"
   NucleusA$age <- sample(rep(1:length(AgeDist) + 8), size = n, replace = TRUE, prob = AgeDist) # +8 so that piglets are ready for breeding more quickly ##3
   NucleusA$fate <- 1
   
@@ -48,10 +48,10 @@ CreatePiglets <- function (sires, dams, indexSD, genNo, label, littersize){
   ### will always select the allele on the left. not a true shuffling or random meiotic pattern? how to include recombination factors???? 
   sgA <- siresOrdered2$genoA
   s1A <- substr(sgA, 1, 1)
-  s2A <- substr(sgA, 2, 2)
+  s2A <- substr(sgA, 3, 3)
   dgA <- dams$genoA
   d1A <- substr(dgA, 1, 1)
-  d2A <- substr(dgA, 2, 2)
+  d2A <- substr(dgA, 3, 3)
   # Sample which allele of the PRRS resistant genotype is inherited from each parent
   sireAlleleA <- sample(c(1,2),nP,replace = TRUE)
   damAlleleA <- sample(c(1,2),nP,replace = TRUE)
@@ -59,10 +59,10 @@ CreatePiglets <- function (sires, dams, indexSD, genNo, label, littersize){
   # split the sire and dam genotypes into the separate alleles - B
   sgB <- siresOrdered2$genoB
   s1B <- substr(sgB, 1, 1)
-  s2B <- substr(sgB, 2, 2)
+  s2B <- substr(sgB, 3, 3)
   dgB <- dams$genoB
   d1B <- substr(dgB, 1, 1)
-  d2B <- substr(dgB, 2, 2)
+  d2B <- substr(dgB, 3, 3)
   # Sample which allele of the PRRS resistant genotype is inherited from each parent
   sireAlleleB <- sample(c(1,2),nP,replace = TRUE)
   damAlleleB <- sample(c(1,2),nP,replace = TRUE)
@@ -72,12 +72,14 @@ CreatePiglets <- function (sires, dams, indexSD, genNo, label, littersize){
   piglets$herd <- siresOrdered2$herd ## showing male herd is enough to know lineage? ###
   piglets$sex <- sample (c("M", "F"), nP, replace = TRUE, prob = c(0.5, 0.5))
   piglets$merit <- 0.5 * (siresOrdered2$merit + dams$merit) + rnorm(nP, 0, indexSD) %>% round(digits = 0) ##### is this variation a realistic meiotic figure? #### are these the actual dam and sire merits? ### how to check...?##
-  piglets$genoA <- paste0(ifelse(sireAlleleA==1,s1A,s2A),ifelse(damAlleleA==1,d1A,d2A))
-  piglets$genoB <- paste0(ifelse(sireAlleleB==1,s1B,s2B),ifelse(damAlleleB==1,d1B,d2B)) ###paste0 puts in letter not the logical result
+  piglets$genoA <- paste(ifelse(sireAlleleA==1,s1A,s2A),ifelse(damAlleleA==1,d1A,d2A), sep = "/")
+  piglets$genoB <- paste(ifelse(sireAlleleB==1,s1B,s2B),ifelse(damAlleleB==1,d1B,d2B), sep = "/") ###paste0 puts in letter not the logical result
   piglets$age <- -3         
   piglets$fate <- 1 
   piglets$sire <- siresOrdered2$ID ### doesn't appear to always work... ###
   piglets$dam <- dams$ID
+  
+  ## introduce seperator of column for genoA and genoB
   
   return(piglets)
 }
@@ -140,7 +142,8 @@ littersize <- 12 ###consider function for changing the littersize and having a f
       print(paste0("Gen:", g, sep = " "))
     
     ### select top 25% of eligible breeding females
-    
+      
+      
     ### select males from top percentage. Should leave other breeding age pigs for below tiers
     BreedSPFA_Male <- SPFpop %>% filter (sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit) 
     BreedSPFA_Fem <- filter(SPFpop, sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem)  %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
@@ -263,10 +266,11 @@ if (g >= -35){
     BW_Fem_Breed <- BWpop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) 
     BW_Males <- BWpop %>% filter(sex == "M") %>% filter(age >= AgeFirstMate)
 
-    CommercialPop <- CreatePiglets(SPF_BWpop_Males, BW_Fem_Breed, indexSD, g, paste0("BW",g,"_"), littersize) #piglets will be T herd, females from B herd. 
+    BW_piglets <- CreatePiglets(SPF_BWpop_Males, BW_Fem_Breed, indexSD, g, paste0("BW",g,"_"), littersize) #piglets will be T herd, females from B herd. 
     ### maybe transfer BW males and retain some BW females for breeding if they are of better merit than piglets born??? ###
+    ## renamed CommercialPop and are pigs measured in forward sim
     
-    NewBW_Females <- CommercialPop %>% filter(sex == "F") %>% top_frac(0.1, merit) ## takes the top 20% of new females created, all that is required. #### increase if I want more PN breeding ###
+    NewBW_Females <- BW_piglets %>% filter(sex == "F") %>% top_frac(0.1, merit) ## takes the top 20% of new females created, all that is required. #### increase if I want more PN breeding ###
 
     BWpop <- rbind.fill(BWpop, NewBW_Females)
     
@@ -275,7 +279,7 @@ if (g >= -35){
     print(paste0("BW Males:", sum(BWpop$sex == "M"), sep = " "))
     print(paste0 ("BW Females:", sum(BWpop$sex =="F"), sep = " "))
     
-    print(paste0 ("Commercial Pigs:", nrow(CommercialPop), sep = " "))
+    #print(paste0 ("Commercial Pigs:", nrow(CommercialPop), sep = " "))
     
     ## BWpop should retain some males or male piglets born to breed with the new females. Breeding in BWpop not to be AI only
     
@@ -405,8 +409,7 @@ if (g >= -35){
  
   ## may not need next breeders retained between generations once flowing ###  
 
-
-
+  
 
 
   
