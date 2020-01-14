@@ -13,7 +13,7 @@
 ### reset all populations to BurnIn read file
 
 
-for (g in 0:50){
+for (g in 0:120){
   
   print(paste0("Gen:", g, sep = " "))
   
@@ -22,14 +22,17 @@ for (g in 0:50){
   ### add in selection for having a resistance allele? resistant > hets >susceptible
   
   ### select males from top percentage. Should leave other breeding age pigs for below tiers
-  BreedSPFA_Male <- SPFpop %>% filter (sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) 
+  BreedSPFA_Male <- SPFpop %>% filter (sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit)
     
-    if (nrow(filter(BreedSPFA_Male, genoA == "a/a")) > 5) {
-       BreedSPFA_Male <- BreedSPFA_Male %>% filter(genoA == "a/a") %>% top_frac(0.05, merit) 
-    } else if (nrow(filter(BreedSPFA_Male, genoA %in% c("a/a", "a/A", "A/a"))) > 5) {
-       BreedSPFA_Male <- BreedSPFA_Male %>% (filter(genoA %in% c("a/a", "a/A", "A/a"))) %>% top_frac(0.05, merit) 
-    } else 
-   (BreedSPFA_Male <- BreedSPFA_Male %>% top_frac(0.05, merit) )   #(filter(genoA %in% c("a/a", "a/A", "A/a", "A/A") > 1))
+  ###could be a 'while iterator that fixes the selection problem here and for passing through generations
+  
+  
+  #  if (nrow(filter(BreedSPFA_Male, genoA == "a/a")) > 3) {
+  #     BreedSPFA_Male <- BreedSPFA_Male %>% filter(genoA == "a/a") %>% top_frac(0.05, merit) 
+  #  } else if (nrow(filter(BreedSPFA_Male, genoA %in% c("a/a", "a/A", "A/a"))) > 4) {
+  #     BreedSPFA_Male <- BreedSPFA_Male %>% (filter(genoA %in% c("a/a", "a/A", "A/a"))) %>% top_frac(0.05, merit) 
+  #  } else 
+  # (BreedSPFA_Male <- BreedSPFA_Male %>% top_frac(0.05, merit) )   #(filter(genoA %in% c("a/a", "a/A", "A/a", "A/A") > 1))
 
   BreedSPFA_Fem <- filter(SPFpop, sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem)  %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
   
@@ -77,17 +80,23 @@ for (g in 0:50){
   print(paste0 ("SPF Females:", sum(SPFpop$sex =="F"), sep = " "))
   
   
-  if (g >= 0){ #### selecting all the breeding sows above removes the breeders for Prod breeding. Need to select elsewhere ###
+  if (g >= 0 & g %% 2 == 0){ #### selecting all the breeding sows above removes the breeders for Prod breeding. Need to select elsewhere ###
     
     SPFpop <-  anti_join(SPFpop, SPF_Breeders, by = "ID") ## removes breeding SPF breeding animals from SPF pop,
     # selection will exclude nucleus breeding animals ## keeps out for mult & BW tier 
     
+#while (nrow(SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) > 3)) { 
+
     SPF_ProdPop_Fem <- SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.25, merit) #takes away top 25% for PN 
     SPFpop <-  anti_join(SPFpop, SPF_ProdPop_Fem, by = "ID") ## SPF pop loses the animals transferred to prod pop. Not reintegrated and cannot be used in SPF in future 
     
+ 
+#while (nrow(SPFpop %>% filter(sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) > 3)) { 
+  
     SPF_ProdPop_Males <- SPFpop %>% filter(sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.1, merit) #takes top 10% available boars
     #SPFpop <-  anti_join(SPFpop, SPF_ProdPop_Males, by = "ID") ## removes prod pop males from the SPFpop #can't be reused in SPFpop 
     ### don't need as AI is performed on SPF pops
+
     
     ProdPop <- rbind.fill(ProdPop, SPF_ProdPop_Fem) ### No males from SPF stored as used by AI. Only PN bred males will be in PN ######
     
@@ -112,6 +121,8 @@ for (g in 0:50){
     
     ### A or B females as can be bred within mult tier or from prod?? ## no transfer of Mult pigs back into breeding data frame so only A females used, piglets will be B herd. 
     ### Need to make sure Prod_Females are put back into ProdPop at the end of generation! 
+    
+    ## 'while' function may be needed here to no dwindle prodpop stocks
     
     ProdPop <- anti_join(ProdPop, Prod_Females, by = "ID") ## removes pigs bred in ProdPop from being bred again in same generation ## should only be top 50% of breeding animals
     
@@ -197,9 +208,11 @@ for (g in 0:50){
     NextBreeders <- SPFpop %>% filter (sex =="F" & age > 9 & age %% FarrowInt == 2) ### filters all pigs that will breed next loop to be included for selection
     #A_ResistantAllele <- SPFpop %>% filter (genoA %in% "a/a", "a/A", "A/a")
     
-    SPFpopA_females <- SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= 8) %>% filter (genoA %in% "a/a", "a/A", "A/a") %>% top_n(4500, merit) ### same as numbers for initial basepop
-    SPFpopB_females <- SPFpop %>% filter(sex == "F" & herd == "B") %>% filter(age >= 8) %>% filter (genoA %in% "a/a", "a/A", "A/a")%>% top_n(2250, merit) ### not removing females available for breeding in the next generation??? ###
-    SPFpopT_females <- SPFpop %>% filter(sex == "F" & herd == "T") %>% filter(age >= 8) %>% filter (genoA %in% "a/a", "a/A", "A/a")%>% top_n(2250, merit)
+    SPFpopA_females <- SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= 8) %>% top_n(4500, merit) ### same as numbers for initial basepop
+    SPFpopB_females <- SPFpop %>% filter(sex == "F" & herd == "B") %>% filter(age >= 8) %>% top_n(2250, merit) ### not removing females available for breeding in the next generation??? ###
+    SPFpopT_females <- SPFpop %>% filter(sex == "F" & herd == "T") %>% filter(age >= 8) %>% top_n(2250, merit)
+    
+    #%>% filter (genoA %in% "a/a", "A/a", "a/A")
     
     SPFpop_males <- SPFpop %>% filter(sex == "M") %>% filter(age >= 8) %>% top_n(500, merit) #### may need to ensure not all old pigs are culled so that there are enough older animals for breeding!
     #SPFpopB_males <- SPFpop %>% filter(sex == "M" & herd == "B") %>% filter(age >= 8) %>% top_n(500, merit) 
@@ -297,10 +310,16 @@ for (g in 0:50){
   Allpop <- rbind.fill(SPFpop, ProdPop, MultPop, BWpop) # doesn't include dying pigs and designate as dead. missing pigs! 
   ### need to assign pigs removed by joining into Allpop or another table of cast offs
   
-}
+  if (g == 0) { 
+    Allpop2 <- data.frame(Allpop)
+  } else  (Allpop2 <- rbind.fill(Allpop2, Allpop))
+  
+  ################################
+  #### need data.frame compiling all commercial pigs created and distributed as piglets/breeding animals to farmers
+  
+} ### end of g loop
+
+###### need to create table of all pigs that have ever been created and their genotypes/ages
+###### need to create table of all pigs that have ever bred and their genotypes
 
 
-# if (g = 0) {
-#  Allpop2 <- data.frame(Allpop)
-#  else
-#   {Allpop <- rbind.fill(Allpop2, Allpop)}
