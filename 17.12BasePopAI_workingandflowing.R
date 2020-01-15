@@ -4,12 +4,11 @@ library (plyr)
 library (dplyr)
 library (purrr)
 library (tidyverse)
-library (genetics)
- 
+
 ################## PARAMETERS/VALUES #########################
 ######## setting parameters/values required for code ########## 
 AgeDist <- c(0.092,0.055,0.07,0.09,0.115,0.147,0.189,0.242) ###
-indexSD <- 10 
+indexSD <- 5
 littersize <- 12 ### consider function for changing the littersize and having a fertilisation proportion ###
 AgeFirstMate <- 8
 FarrowInt <- 5
@@ -19,7 +18,7 @@ rem <- AgeFirstMate - FarrowInt #### females to breed. rem = 3 which is selects 
 ####################
 
 BasePop <- function(n, indexSD, AgeDist) {
-  NucleusA <- setNames(data.frame(matrix(nrow = n, ncol =9)), c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate"))
+  NucleusA <- setNames(data.frame(matrix(nrow = n, ncol =10)), c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "IAV"))
   
   NucleusA$ID <- rep(1:n)
   NucleusA$gen <- 0
@@ -30,6 +29,7 @@ BasePop <- function(n, indexSD, AgeDist) {
   NucleusA$genoB <- "B/B"
   NucleusA$age <- sample(rep(1:length(AgeDist) + 8), size = n, replace = TRUE, prob = AgeDist) # +8 so that piglets are ready for breeding more quickly ##3
   NucleusA$fate <- 1
+  NucleusA$IAV <- ifelse(NucleusA$genoA == "a/a", "0", "10")
   
   return (NucleusA)
 }
@@ -37,7 +37,7 @@ BasePop <- function(n, indexSD, AgeDist) {
 
 CreatePiglets <- function (sires, dams, indexSD, genNo, label, littersize){
   nP <- length(dams$ID)*littersize ###
-  piglets <- setNames(data.frame(matrix(nrow = nP, ncol =11)), c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam"))
+  piglets <- setNames(data.frame(matrix(nrow = nP, ncol =12)), c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam", "IAV"))
   
   siresOrdered <- sires %>% filter(age >= AgeFirstMate) %>% arrange(desc(merit)) #### need to assign sires to the relevant dam 
   siresOrdered2 <- sample(1:length(siresOrdered$ID), length(dams$ID), replace = TRUE)
@@ -78,8 +78,7 @@ CreatePiglets <- function (sires, dams, indexSD, genNo, label, littersize){
   piglets$fate <- 1 
   piglets$sire <- siresOrdered2$ID ### doesn't appear to always work... ###
   piglets$dam <- dams$ID
-  
-  ## introduce seperator of column for genoA and genoB
+  piglets$IAV <- ifelse(piglets$genoA == "a/a", "0", "10")
   
   return(piglets)
 }
@@ -179,23 +178,23 @@ edit_genes <- function(popdata, Edit_Efficiency, Embryo_Survival) {
 
 SPFpop <- BasePop(9000, indexSD, AgeDist)  #### creates base population of piggys ### start with ~10,000 to have enough for flowing down ### 
 
-  ProdPop <- data.frame(matrix(ncol = 11, nrow = 0))
-  colnames(ProdPop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
+  ProdPop <- data.frame(matrix(ncol = 12, nrow = 0))
+  colnames(ProdPop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam", "IAV")
   
-  Prod_Females <- data.frame(matrix(ncol = 11, nrow = 0))
-  colnames(Prod_Females) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
+  Prod_Females <- data.frame(matrix(ncol = 12, nrow = 0))
+  colnames(Prod_Females) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam", "IAV")
   
-  MultPop <- data.frame(matrix(ncol = 11, nrow = 0))
-  colnames(MultPop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
+  MultPop <- data.frame(matrix(ncol = 12, nrow = 0))
+  colnames(MultPop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam", "IAV")
   
-  Mult_Females <- data.frame(matrix(ncol = 11, nrow = 0))
-  colnames(Mult_Females) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
+  Mult_Females <- data.frame(matrix(ncol = 12, nrow = 0))
+  colnames(Mult_Females) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam", "IAV")
   
-  BWpop <- data.frame(matrix(ncol = 11, nrow = 0))
-  colnames(BWpop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
+  BWpop <- data.frame(matrix(ncol = 12, nrow = 0))
+  colnames(BWpop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam", "IAV")
   
-  CommercialPop <- data.frame(matrix(ncol = 11, nrow = 0))
-  colnames(BWpop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam")
+  CommercialPop <- data.frame(matrix(ncol = 12, nrow = 0))
+  colnames(BWpop) <- c("ID", "gen", "herd", "sex", "merit", "genoA", "genoB", "age", "fate", "sire", "dam", "IAV")
   
   for (g in -60:0){
 
@@ -230,7 +229,6 @@ SPFpop <- BasePop(9000, indexSD, AgeDist)  #### creates base population of piggy
     SPFNucB_Fem <- filter(newGenSPFNucB, sex == "F")  %>% top_frac(0.2, merit) #### maybe need ageDist to make sure pigs of all ages are selected ### 
     SPFNucB_Male <- filter(newGenSPFNucB, sex == "M") %>% top_frac (0.05, merit)
     
-    
     ##### separate into T herd ###########
     BreedSPFT_Male <- SPFpop %>% filter (sex == "M" & herd == "T") %>% filter(age >= AgeFirstMate) %>% top_frac(0.05, merit) 
     BreedSPFT_Fem <- filter(SPFpop, sex == "F" & herd == "T") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem ) %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
@@ -263,7 +261,7 @@ if (g >= -50){ #### selecting all the breeding sows above removes the breeders f
   SPF_ProdPop_Males <- SPFpop %>% filter(sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) %>% top_frac(0.1, merit) #takes top 10% available boars
   #SPFpop <-  anti_join(SPFpop, SPF_ProdPop_Males, by = "ID") ## removes prod pop males from the SPFpop #can't be reused in SPFpop ### don't need as AI is performed on SPF pops
 
-  ProdPop <- rbind.fill(ProdPop, SPF_ProdPop_Fem) ### No males from SPF stored as used by AI. Only PN bred males will be in PN ######
+  ProdPop <- rbind.fill(ProdPop, SPF_ProdPop_Fem) ### No males from SPF stored as used by AI. Only PN bred males will be in PN ###### anti_join removes females later
   
   Prod_Males <- rbind.fill(ProdPop, SPF_ProdPop_Males) %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) %>% top_frac(0.15, merit) # selects for males from ProdPop and SPF Nucleus ## never integrated with full ProdPop
   Prod_Females <- ProdPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.5, merit) %>% mutate(ID = as.character(ID))### already over age first mate, ensure they are correct farrowing interval. 
@@ -471,10 +469,6 @@ if (g >= -35){
   
   } ### end of g loop
 
-  
-
-  
-  
   
   ### have anti joins for SPF vs Prod, Prod Vs mult and mult Vs BW to ensure no cross over in pig populations???? #####3
   ## must still remove ProdNuc, Multpop and BWpop males from the SPFpop. Once they transtition they can't return 
