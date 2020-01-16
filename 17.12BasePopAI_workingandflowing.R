@@ -8,7 +8,7 @@ library (tidyverse)
 ################## PARAMETERS/VALUES #########################
 ######## setting parameters/values required for code ########## 
 AgeDist <- c(0.092,0.055,0.07,0.09,0.115,0.147,0.189,0.242) ###
-indexSD <- 5
+indexSD <- 10
 littersize <- 12 ### consider function for changing the littersize and having a fertilisation proportion ###
 AgeFirstMate <- 8
 FarrowInt <- 5
