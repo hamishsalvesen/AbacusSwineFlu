@@ -103,17 +103,18 @@ ageing <- function (popdata){
   popdata_mort$mort <- NULL
   popdata_piglets <- popdata %>% filter(age <= 1) 
   popdata <- rbind (popdata_piglets, popdata_mort) ## rebind piglets and undead pigs again 
-  
-  popdataSows <- filter(popdata, sex == "F" & age >= AgeFirstMate)
-  popdataSows$gest <- ((popdataSows$age - AgeFirstMate) / FarrowInt)+1 ### splits into gestation groups
-  popdataSows$gest <- floor(popdataSows$gest)
-  popdataSows <- split(popdataSows, popdataSows$gest) ## forms lists with the differetn gestations
  
-  popdataSows <- lapply(popdataSows, function(x) top_frac(x, 0.5, merit))
-  popdataSows <- unlist(data.frame(popdataSows))
-  # lapply, applys to each element of the list. unlist function. 
   
-  ## does not show culled pigs for looking at just removes the ones dieing
+   ########### gestation separator and selection ###########
+  
+ # popdataSows <- filter(popdata, sex == "F" & age >= AgeFirstMate)
+#  popdataSows$gest <- ((popdataSows$age - AgeFirstMate) / FarrowInt)+1 ### splits into gestation groups
+#  popdataSows$gest <- floor(popdataSows$gest)
+#  popdataSows <- split(popdataSows, popdataSows$gest) ## forms lists with the differetn gestations
+ 
+#  popdataSows <- lapply(popdataSows, function(x) top_frac(x, 0.5, merit))   # lapply, applys to each element of the list. unlist function. 
+#  popdataSows <- bind_rows(popdataSows) 
+  
   
   popdata <- filter(popdata, fate == 1) ## only alive pigs retained
 
@@ -274,8 +275,8 @@ SPFpop <- BasePop(9000, indexSD, AgeDist)  #### creates base population of piggy
     ### males are not removed as they can inseminate multiple tiers through an AI program
     
     
-    if (g == -60) { 
-      SPFpopAll <- data.frame(SPFpop)
+    if (g == -50) { 
+      SPFpopAll <- data.frame(SPFpop) 
     } else  (SPFpopAll <- rbind.fill(SPFpopAll, SPFpop))
     
     
@@ -302,8 +303,8 @@ if (g >= -50){
   
   ProdPop <- rbind.fill(ProdPop, NewProd_Females, NewProd_Males) ### combine all animals to stay in ProdPop
   
-  if (g >= -50) { 
-    ProdPopAll <- data.frame(ProdPop)
+  if (g == -50) { 
+    ProdPopAll <- data.frame(ProdPop) 
   } else  (ProdPopAll <- rbind.fill(ProdPopAll, ProdPop))
   
   }
@@ -334,8 +335,8 @@ if (g >= -35){
   MultPop <- rbind.fill(MultPop, NewMult_Females, NewMult_Males) %>% mutate(ID = as.character(ID))
   ### coerce ID to be a character vector for BW antijoin below 
 
-  if (g >= -35) { 
-    MultPopAll <- data.frame(MultPop)
+  if (g == -35) { 
+    MultPopAll <- data.frame(MultPop) 
   } else  (MultPopAll <- rbind.fill(MultPopAll, MultPop))
   
   } 
@@ -363,8 +364,8 @@ if (g >= -35){
 
     BWpop <- rbind.fill(BWpop, NewBW_Females)
  
-    if (g >= -25) { 
-      BWpopAll <- data.frame(BWpop)
+    if (g == -25) { 
+      BWpopAll <- data.frame(BWpop) 
     } else  (BWpopAll <- rbind.fill(BWpopAll, BWpop))
     
      }
@@ -465,7 +466,7 @@ if (g >= -35){
   Allpop <- rbind.fill(SPFpop, ProdPop, MultPop, BWpop) 
 
   if (g == -60) { 
-    Allpop2 <- data.frame(Allpop)
+    Allpop2 <- data.frame(Allpop) %>% filter(age >= AgeFirstMate)
   } else  (Allpop2 <- rbind.fill(Allpop2, Allpop))
   
   
