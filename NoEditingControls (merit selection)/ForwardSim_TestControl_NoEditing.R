@@ -3,22 +3,24 @@
 ## Create BasePop - generations -70 to 0
 #BurnInPop <- read.csv("BurnInPop2020-01-14.csv") ### source ("") ### setwd ("")
 
-SPFpop <- BurnIn$SPFpop
-ProdPop <- BurnIn$ProdPop
-MultPop <- BurnIn$MultPop
-BWpop <- BurnIn$BWpop 
 
 ### reset all populations to BurnIn read file  ### not reading a file, still needs a repeat of the previous file each time
 
-
-Edit_Efficiency <- 0.5 ### change depending upon technique
-Embryo_Survival <- 0.333 ### change depending upon technique
 
 #### changing litter size is effectively increasing the number of donor females, flushing pigs. alter for different techniques. Research ET 
 # littersize <- ???
 
 
-for (i in 1:2) {
+for (i in 1:10) {
+  
+  SPFpop <- BurnIn$SPFpop
+  ProdPop <- BurnIn$ProdPop
+  MultPop <- BurnIn$MultPop
+  BWpop <- BurnIn$BWpop 
+  
+  
+  #Edit_Efficiency <- 0.5 ### change depending upon technique
+  #Embryo_Survival <- 0.333 ### change depending upon technique
   
   for (g in 1:120){
     
@@ -31,29 +33,29 @@ for (i in 1:2) {
       BreedSPFA_Male <- SPFpop %>% filter (sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) # %>% top_frac(0.05, merit) 
       ### resistant > hets > susceptible ### merit selection introduced in 'if' below
       if (nrow(filter(BreedSPFA_Male, genoA == "a/a" & genoB == "b/b")) >= 5) {
-        BreedSPFA_Male <- BreedSPFA_Male %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_frac(0.2, merit) 
+        BreedSPFA_Male <- BreedSPFA_Male %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_n(10, merit) 
       } else if (nrow(filter(BreedSPFA_Male, genoA != "A/A" & genoB != "B/B")) > 10) {
-        BreedSPFA_Male <- BreedSPFA_Male %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.2, merit) 
-      } else  (BreedSPFA_Male <- BreedSPFA_Male %>% top_frac(0.05, merit)) 
+        BreedSPFA_Male <- BreedSPFA_Male %>% filter(genoA != "A/A" & genoB != "B/B") %>% top_n(10, merit)
+      } else  (BreedSPFA_Male <- BreedSPFA_Male %>% top_n(10, merit))
       
-      BreedSPFA_Fem <- filter(SPFpop, sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) # %>% top_frac(0.5, merit) #crashed when using
+      BreedSPFA_Fem <- filter(SPFpop, sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.5, merit) #crashed when using
       
       if (nrow(filter(BreedSPFA_Fem, genoA == "a/a" & genoB == "b/b")) >= 3) {
-        BreedSPFA_Fem <- BreedSPFA_Fem %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.5, merit) 
+        BreedSPFA_Fem <- BreedSPFA_Fem %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_n(100, merit) 
       } else if (nrow(filter(BreedSPFA_Fem, genoA != "A/A" & genoB != "B/B")) > 4) {
-        BreedSPFA_Fem <- BreedSPFA_Fem %>% filter(genoA != "A/A" & genoB != "B/B") %>% top_frac(0.2, merit) 
-      } else  (BreedSPFA_Fem <- BreedSPFA_Fem %>% top_frac(0.25, merit))
+        BreedSPFA_Fem <- BreedSPFA_Fem %>% filter(genoA != "A/A" & genoB != "B/B") %>% top_n(100, merit)
+      } else  (BreedSPFA_Fem <- BreedSPFA_Fem %>% top_n(10, merit))
       
       newGenSPFNucA <- CreatePiglets(BreedSPFA_Male, BreedSPFA_Fem, indexSD, g, paste0("SPFA",g,"_"), littersize)
       
-      newGenSPFNucA <- edit_genes(newGenSPFNucA, Edit_Efficiency, Embryo_Survival) ### editing done to piglets is effectively to zygotes
+      #  newGenSPFNucA <- edit_genes(newGenSPFNucA, Edit_Efficiency, Embryo_Survival) ### editing done to piglets is effectively to zygotes
       
       SPFNucA_Fem <- filter(newGenSPFNucA, sex == "F") %>% top_frac(0.25, merit) ## merit selection here
-      SPFNucA_Fem1 <- newGenSPFNucA %>% filter(genoA == "a/a" & genoB == "b/b" & sex == "F")  %>% top_frac(0.5, merit) 
+      SPFNucA_Fem1 <- newGenSPFNucA %>% filter(genoA == "a/a" & genoB == "b/b" & sex == "F")  %>% top_frac(0.25, merit) 
       SPFNucA_Fem <- rbind.fill(SPFNucA_Fem, SPFNucA_Fem1) %>% distinct() #### need to adjust to allow for merit selection after fixing
       
-      SPFNucA_Male <- filter(newGenSPFNucA, sex == "M") %>% top_frac (0.05, merit)
-      SPFNucA_Male1 <-  newGenSPFNucA %>% filter(genoA == "a/a" & genoB == "b/b" &  sex == "M")  %>% top_frac(0.5, merit)
+      SPFNucA_Male <- filter(newGenSPFNucA, sex == "M") %>% top_frac (0.1, merit)
+      SPFNucA_Male1 <-  newGenSPFNucA %>% filter(genoA == "a/a" & genoB == "b/b" &  sex == "M")  %>% top_frac(0.1, merit)
       SPFNucA_Male <- rbind.fill(SPFNucA_Male, SPFNucA_Male1) %>% distinct() #### need to adjust to allow for merit selection after fix
       
     } 
@@ -65,29 +67,29 @@ for (i in 1:2) {
       BreedSPFB_Male <- SPFpop %>% filter (sex == "M" & herd == "B") %>% filter(age >= AgeFirstMate) # %>% top_frac(0.05, merit) 
       
       if (nrow(filter(BreedSPFB_Male, genoA == "a/a" & genoB == "b/b")) >= 5) {
-        BreedSPFB_Male <- BreedSPFB_Male %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_frac(0.2, merit)
+        BreedSPFB_Male <- BreedSPFB_Male %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_n(10, merit)
       } else if (nrow(filter(BreedSPFB_Male, genoA != "A/A" & genoB != "B/B")) > 10) {
-        BreedSPFB_Male <- BreedSPFB_Male %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.2, merit) 
-      } else  (BreedSPFB_Male <- BreedSPFB_Male %>% top_frac(0.05, merit))  
+        BreedSPFB_Male <- BreedSPFB_Male %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_n(10, merit)
+      } else  (BreedSPFB_Male <- BreedSPFB_Male %>% top_n(10, merit))  
       
       BreedSPFB_Fem <- filter(SPFpop, sex == "F" & herd == "B") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) # %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
       
       if (nrow(filter(BreedSPFB_Fem, genoA == "a/a" & genoB == "b/b")) >= 3) {
-        BreedSPFB_Fem <- BreedSPFB_Fem %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_frac(0.5, merit) 
+        BreedSPFB_Fem <- BreedSPFB_Fem %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_n(100, merit)
       } else if (nrow(filter(BreedSPFB_Fem, genoA != "A/A" & genoB != "B/B")) > 4) {
-        BreedSPFB_Fem <- BreedSPFB_Fem %>% filter(genoA != "A/A" & genoB != "B/B") %>% top_frac(0.2, merit) 
-      } else  (BreedSPFB_Fem <- BreedSPFB_Fem %>% top_frac(0.25, merit))
+        BreedSPFB_Fem <- BreedSPFB_Fem %>% filter(genoA != "A/A" & genoB != "B/B") %>% top_n(100, merit) 
+      } else  (BreedSPFB_Fem <- BreedSPFB_Fem %>% top_n(100, merit))
       
       newGenSPFNucB <- CreatePiglets(BreedSPFB_Male, BreedSPFB_Fem, indexSD, g, paste0("SPFB",g,"_"), littersize)
       
-      newGenSPFNucB <- edit_genes(newGenSPFNucB, Edit_Efficiency, Embryo_Survival)
+      #     newGenSPFNucB <- edit_genes(newGenSPFNucB, Edit_Efficiency, Embryo_Survival)
       
       SPFNucB_Fem <- filter(newGenSPFNucB, sex == "F")  %>% top_frac(0.2, merit)
-      SPFNucB_Fem1 <- newGenSPFNucB %>% filter(genoA == "a/a" & genoB == "b/b" &  sex == "F")  %>% top_frac(0.5, merit)
+      SPFNucB_Fem1 <- newGenSPFNucB %>% filter(genoA == "a/a" & genoB == "b/b" &  sex == "F")  %>% top_frac(0.2, merit)
       SPFNucB_Fem <- rbind.fill(SPFNucB_Fem, SPFNucB_Fem1) %>% distinct()
       
-      SPFNucB_Male <- filter(newGenSPFNucB, sex == "M") %>% top_frac (0.05, merit)
-      SPFNucB_Male1 <-  newGenSPFNucB %>% filter(genoA == "a/a" & genoB == "b/b" & sex == "M") %>% top_frac(0.5, merit)
+      SPFNucB_Male <- filter(newGenSPFNucB, sex == "M") %>% top_frac (0.1, merit)
+      SPFNucB_Male1 <-  newGenSPFNucB %>% filter(genoA == "a/a" & genoB == "b/b" & sex == "M") %>% top_frac(0.1, merit)
       SPFNucB_Male <- rbind.fill(SPFNucB_Male, SPFNucB_Male1) %>% distinct()
     }
     
@@ -100,29 +102,29 @@ for (i in 1:2) {
       BreedSPFT_Male <- SPFpop %>% filter (sex == "M" & herd == "T") %>% filter(age >= AgeFirstMate) # %>% top_frac(0.05, merit) 
       
       if (nrow(filter(BreedSPFT_Male, genoA == "a/a" & genoB == "b/b")) >= 3) {
-        BreedSPFT_Male <- BreedSPFT_Male %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_frac(0.2, merit) #### different selection to all the other SPF populations!
+        BreedSPFT_Male <- BreedSPFT_Male %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_n(10, merit) #### different selection to all the other SPF populations!
       } else if (nrow(filter(BreedSPFT_Male, genoA != "A/A" & genoB != "B/B")) > 4) {
-        BreedSPFT_Male <- BreedSPFT_Male %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.2, merit) 
+        BreedSPFT_Male <- BreedSPFT_Male %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_n(10, merit) 
       } else  (BreedSPFT_Male <- BreedSPFT_Male %>% top_frac(0.05, merit) )  
       
       BreedSPFT_Fem <- filter(SPFpop, sex == "F" & herd == "T") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem )# %>% top_frac(0.25, merit) ### remove these pigs from prod tier. Will leave some pigs that can be bred from!
       
       if (nrow(filter(BreedSPFT_Fem, genoA == "a/a" & genoB == "b/b")) >= 3) {
-        BreedSPFT_Fem <- BreedSPFT_Fem %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_frac(0.5, merit) 
+        BreedSPFT_Fem <- BreedSPFT_Fem %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_n(200, merit) 
       } else if (nrow(filter(BreedSPFT_Fem, genoA != "A/A" & genoB != "B/B")) > 4) {
-        BreedSPFT_Fem <- BreedSPFT_Fem %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.2, merit) 
-      } else  (BreedSPFT_Fem <- BreedSPFT_Fem %>% top_frac(0.25, merit))
+        BreedSPFT_Fem <- BreedSPFT_Fem %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_n(200, merit) 
+      } else  (BreedSPFT_Fem <- BreedSPFT_Fem %>% top_n(200, merit))
       
       newGenSPFNucT <- CreatePiglets(BreedSPFT_Male, BreedSPFT_Fem, indexSD, g, paste0("SPFT",g,"_"), littersize)
       
-      newGenSPFNucT <- edit_genes(newGenSPFNucT, Edit_Efficiency, Embryo_Survival)
+      # newGenSPFNucT <- edit_genes(newGenSPFNucT, Edit_Efficiency, Embryo_Survival)
       
       SPFNucT_Fem <- filter(newGenSPFNucT, sex == "F")  %>% top_frac(0.2, merit)
-      SPFNucT_Fem1 <- newGenSPFNucT %>% filter(genoA == "a/a" & genoB == "b/b" &  sex == "F") %>% top_frac(0.5, merit)
+      SPFNucT_Fem1 <- newGenSPFNucT %>% filter(genoA == "a/a" & genoB == "b/b" &  sex == "F") %>% top_frac(0.2, merit)
       SPFNucT_Fem <- rbind.fill(SPFNucT_Fem, SPFNucT_Fem1) %>% distinct()
       
-      SPFNucT_Male <- filter(newGenSPFNucT, sex == "M") %>% top_frac (0.1, merit)
-      SPFNucT_Male1 <-  newGenSPFNucT %>% filter(genoA == "a/a" & genoB == "b/b" &  sex == "M") %>% top_frac(0.5, merit)
+      SPFNucT_Male <- filter(newGenSPFNucT, sex == "M") %>% top_frac (0.2, merit)
+      SPFNucT_Male1 <-  newGenSPFNucT %>% filter(genoA == "a/a" & genoB == "b/b" &  sex == "M") %>% top_frac(0.2, merit)
       SPFNucT_Male <- rbind.fill(SPFNucT_Male, SPFNucT_Male1) %>% distinct()
       
     }
@@ -137,24 +139,24 @@ for (i in 1:2) {
       
       SPFpop <-  anti_join(SPFpop, SPF_Breeders, by = "ID") ## removes breeding SPF breeding animals to prevent breeding in multiple tiers
       
-      SPF_ProdPop_Fem <- SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.5, merit)
+      SPF_ProdPop_Fem <- SPFpop %>% filter(sex == "F" & herd == "A") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) #%>% top_frac(0.5, merit)
       ### removing selection affects flow massively & speeds code ## must be 0 if same selection is performed above for SPFA!
       
       if (nrow(filter(SPF_ProdPop_Fem, genoA == "a/a" & genoB == "b/b")) >= 20) {
         SPF_ProdPop_Fem <- SPF_ProdPop_Fem %>% filter(genoA == "a/a" & genoB == "b/b")  %>% top_frac(0.5, merit) ### merit slection here. not random merit breeding even w resistance
       } else if (nrow(filter(SPF_ProdPop_Fem, genoA != "A/A" & genoB != "B/B")) > 40) {
-        SPF_ProdPop_Fem <- SPF_ProdPop_Fem %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.25, merit) 
-      } else  (SPF_ProdPop_Fem <- SPF_ProdPop_Fem %>% top_frac(0.25, merit))  
+        SPF_ProdPop_Fem <- SPF_ProdPop_Fem %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.5, merit) 
+      } else  (SPF_ProdPop_Fem <- SPF_ProdPop_Fem %>% top_frac(0.5, merit))  
       
       SPFpop <-  anti_join(SPFpop, SPF_ProdPop_Fem, by = "ID") ## SPFpop permanently loses the pigs transferred to ProdPop 
       
       SPF_ProdPop_Males <- SPFpop %>% filter(sex == "M" & herd == "A") %>% filter(age >= AgeFirstMate) # %>% top_frac(0.1, merit) 
       
       if (nrow(filter(SPF_ProdPop_Males %>% filter(age >= AgeFirstMate & genoA == "a/a" & genoB == "b/b"))) >= 10) {
-        SPF_ProdPop_Males <- SPF_ProdPop_Males %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.5, merit) ## should use merit selection here
+        SPF_ProdPop_Males <- SPF_ProdPop_Males %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.1, merit) ## should use merit selection here
       } else if (nrow(filter(SPF_ProdPop_Males, genoA != "A/A" & genoB != "B/B")) > 20) {
-        SPF_ProdPop_Males <- SPF_ProdPop_Males %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.5, merit) 
-      } else  (SPF_ProdPop_Males <- SPF_ProdPop_Males %>% top_frac(0.05, merit) )  
+        SPF_ProdPop_Males <- SPF_ProdPop_Males %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.1, merit) 
+      } else  (SPF_ProdPop_Males <- SPF_ProdPop_Males %>% top_frac(0.1, merit) )  
       
       #SPFpop <-  anti_join(SPFpop, SPF_ProdPop_Males, by = "ID") ## removes prod pop males from the SPFpop ### don't need as AI is performed on SPFpop
       
@@ -163,9 +165,9 @@ for (i in 1:2) {
       Prod_Males <- rbind.fill(ProdPop, SPF_ProdPop_Males) %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) #%>% top_frac(0.15, merit) # selects for males from ProdPop and SPF Nucleus 
       
       if (nrow(filter(Prod_Males %>% filter(age >= AgeFirstMate & genoA == "a/a" & genoB == "b/b"))) >= 10) {
-        Prod_Males <- Prod_Males %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.5, merit) 
+        Prod_Males <- Prod_Males %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.05, merit) 
       } else if (nrow(filter(Prod_Males, genoA != "A/A" & genoB != "B/B")) > 20) {
-        Prod_Males <- Prod_Males %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.5, merit) 
+        Prod_Males <- Prod_Males %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.05, merit) 
       } else  (Prod_Males <- Prod_Males %>% top_frac(0.05, merit) )  
       
       Prod_Females <- ProdPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.5, merit) %>% mutate(ID = as.character(ID))### already over age first mate, ensure they are correct farrowing interval. 
@@ -208,26 +210,28 @@ for (i in 1:2) {
       Mult_Females <- MultPop %>% filter(sex == "F") %>% filter (age >= AgeFirstMate & age %% FarrowInt == rem) # %>% top_frac(0.5, merit) #selection below
       
       if (nrow(filter(Mult_Females %>% filter(age >= AgeFirstMate & genoA == "a/a" & genoB == "b/b"))) >= 10) {
-        Mult_Females <- Mult_Females %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.5, merit) 
+        Mult_Females <- Mult_Females %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.25, merit) 
       } else if (nrow(filter(Mult_Females, genoA != "A/A" & genoB != "B/B")) > 20) {
-        Mult_Females <- Mult_Females %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.5, merit) 
+        Mult_Females <- Mult_Females %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.25, merit) 
       } else  (Mult_Females <- Mult_Females %>% top_frac(0.25, merit))  
       
       Mult_Males <- MultPop %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) # %>% top_frac(0.1, merit) #selection performed below 
       
       if (nrow(filter(Mult_Males %>% filter(age >= AgeFirstMate & genoA == "a/a" & genoB == "b/b"))) >= 10) {
-        Mult_Males <- Mult_Males %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.2, merit) 
+        Mult_Males <- Mult_Males %>% filter(genoA == "a/a" & genoB == "b/b") %>% top_frac(0.1, merit) 
       } else if (nrow(filter(Mult_Males, genoA != "A/A" & genoB != "B/B")) > 20) {
-        Mult_Males <- Mult_Males %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.2, merit) 
-      } else  (Mult_Males <- Mult_Males %>% top_frac(0.05, merit) )  
+        Mult_Males <- Mult_Males %>% filter(genoA != "A/A" & genoB != "B/B")  %>% top_frac(0.1, merit) 
+      } else  (Mult_Males <- Mult_Males %>% top_frac(0.1, merit) )  
+      
       Mult_Females <- MultPop %>% filter(sex == "F") %>% filter (age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.5, merit) ## probably best to filter for age here, not realistic to redo it for each cycle ##
       
       NewMultPop <- CreatePiglets(Mult_Males, Mult_Females, indexSD, g, paste0("Mult",g,"_"), littersize)
       
-      NewMult_Females <- NewMultPop %>% filter(sex == "F") %>% top_frac(0.25, merit) ## takes the top 20% of new females created, all that is required. #### increase if I want more PN breeding ###
-      NewMult_Females <- rbind.fill(NewMult_Females, (filter(NewMultPop, sex == "F" & genoA =="a/a" & genoB == "b/b"))) %>% distinct()
+      NewMult_Females <- NewMultPop %>% filter(sex == "F") %>% top_n(4000, merit) ## takes the top 20% of new females created, all that is required. #### increase if I want more PN breeding ###
+      NewMult_Females <- rbind.fill(NewMult_Females, (filter(NewMultPop, sex == "F" & genoA =="a/a" & genoB == "b/b"))) %>% top_n(4000, merit) %>% distinct()
       
-      NewMult_Males <- NewMultPop %>% filter(sex == "M" & genoA =="a/a" & genoB == "b/b") %>% top_frac(0.1, merit)
+      #NewMult_Males <- rbind(NewMultPop %>% filter(sex == "M" & genoA =="a/a" & genoB == "b/b") %>% top_n(400, merit), NewMultPop %>% filter(sex == "M") %>% top_n(400, merit)) %>% distinct()
+      
       
       MultPop <- rbind.fill(MultPop, NewMult_Females, NewMult_Males) %>% mutate(ID = as.character(ID)) %>% distinct()
       
@@ -243,10 +247,10 @@ for (i in 1:2) {
       
       MultPop <-  anti_join(MultPop, Mult_Females, by = "ID") #### keep MultPop females that have bred out of potential BW pop. rejoin later
       
-      Mult_BW_Fem <- MultPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_frac(0.7, merit) 
+      Mult_BW_Fem <- MultPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) #%>% top_frac(0.7, merit) 
       MultPop <- anti_join(MultPop, Mult_BW_Fem, by = "ID") ## removes pigs transferred down to BWpop from MultPop permanently
       
-      SPF_BWpop_Males <- SPFpop %>% filter(sex == "M" & herd == "T") %>% filter(age >= AgeFirstMate) %>% top_frac(0.1, merit)
+      SPF_BWpop_Males <- SPFpop %>% filter(sex == "M" & herd == "T") %>% filter(age >= AgeFirstMate) %>% top_frac(0.2, merit)
       SPFpop <-  anti_join(SPFpop, SPF_BWpop_Males, by = "ID") ##no returning pigs as not an AI program
       
       BWpop <- rbind.fill(BWpop, Mult_BW_Fem, SPF_BWpop_Males) ## put MultPop females & SPFpopT into BW population
@@ -365,11 +369,11 @@ for (i in 1:2) {
     
     MultPop <- rbind.fill(Mult_Females, MultPop) %>% distinct() 
     
-    if (sum(MultPop$age > 8) > 70000) {  ### may be too many!!!
+    if (sum(MultPop$age > 8) > 60000) {  ### may be too many!!!
       NextBreedersMult <- MultPop %>% filter (sex =="F" & age > 9 & age %% FarrowInt == 2)
       
-      MultPopFem <- MultPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate) %>% filter(genoA != "A/A" & genoB !="B/B") %>% top_n(70000, merit)
-      MultPopMales <- MultPop %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) %>% filter(genoA != "A/A" & genoB !="B/B")%>% top_n(10000, merit)
+      MultPopFem <- MultPop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate) %>% filter(genoA != "A/A" & genoB !="B/B") %>% top_n(60000, merit)
+      MultPopMales <- MultPop %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) %>% filter(genoA != "A/A" & genoB !="B/B")%>% top_n(7000, merit)
       MultPopPiglets <- MultPop %>% filter(sex == "F") %>% filter(age < AgeFirstMate & age >= 1) %>% filter(genoA != "A/A" & genoB !="B/B") %>% top_n(20000, merit) 
       MultPop <- rbind.fill(MultPopFem, MultPopMales, MultPopPiglets, NextBreedersMult) 
     }
@@ -412,10 +416,9 @@ for (i in 1:2) {
   } ### end of g loop
   
   
-  
   OutputData <- function (popdata, label){
     
-    NumEdited <-   function (popdata) {popdata %>% 
+    NumEdited <- function (popdata) {popdata %>%  
         filter(gen > 0 & EditTrials == "1") %>% 
         group_by(gen)  %>%
         summarise (EditCount = n())}
@@ -446,19 +449,20 @@ for (i in 1:2) {
       left_join(PropResistantTab, by = "gen", all.x = TRUE) %>% 
       left_join(PopCountTab, by = "gen", all.x = TRUE)
     
-    colnames(SumStats) <- paste("SPF", colnames(SumStats), sep = "_")
+    colnames(SumStats) <- paste(label, colnames(SumStats), sep = "_")
     return (SumStats)
   }
   
-  SPFpopAllOutput <- OutputData(SPFpopAll)
-  ProdPopAllOutput <- OutputData(ProdPopAll)
-  MultPopAllOutput <- OutputData(MultPopAll)
-  BWpopAllOutput <- OutputData(BWpopAll)
-  CommercialPopAllOutput <- OutputData(CommercialPopAll)
-  Allpop2Output <- OutputData(Allpop2)
-  
+  SPFpopAllOutput <- OutputData(SPFpopAll, "SPF")
+  ProdPopAllOutput <- OutputData(ProdPopAll, "Prod")
+  MultPopAllOutput <- OutputData(MultPopAll, "Mult")
+  BWpopAllOutput <- OutputData(BWpopAll, "BW")
+  CommercialPopAllOutput <- OutputData(CommercialPopAll, "Comm")
   
   OutputFile <- cbind(SPFpopAllOutput, ProdPopAllOutput, MultPopAllOutput, BWpopAllOutput, CommercialPopAllOutput)
   
-  write.csv(OutputFile, paste0("OutputFile_Test",i, ".csv")) 
-}
+  write.csv(OutputFile, paste0("OutputFile_Control_1_",i,"csv")) 
+  
+  print(Sys.time())
+  
+} #### end of i loop
