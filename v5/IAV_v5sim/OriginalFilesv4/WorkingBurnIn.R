@@ -292,7 +292,7 @@ BreedSelection_frac <- function (popdata, selection){
                                                                                                                            ifelse(popdata$genoA == "a/a" & popdata$genoB == "b/b", 400, 0)))))))))))))))) 
   
   popdata <- arrange(popdata,-Rank, -merit) 
-  popdata <- top_frac(popdata, selection) %>% na.omit ()
+  popdata <- top_frac(popdata, selection, Rank) %>% na.omit ()
   
   popdata$Rank <- NULL
   
