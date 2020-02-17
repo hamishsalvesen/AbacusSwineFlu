@@ -3,10 +3,10 @@
 ## Create BasePop - generations -70 to 0
 
 
-#BurnIn_SPF <- read.csv("BurnIn_SPFpop2020-02-15.csv")
-#BurnIn_Prod <- read.csv("BurnIn_ProdPop2020-02-15.csv")
-#BurnIn_Mult <- read.csv("BurnIn_MultPop2020-02-15.csv")
-#BurnIn_BW <- read.csv("BurnIn_BWpop2020-02-15.csv")
+#BurnIn_SPF <- read.csv("BurnIn_SPFpop2020-02-16.csv")
+#BurnIn_Prod <- read.csv("BurnIn_ProdPop2020-02-16.csv")
+#BurnIn_Mult <- read.csv("BurnIn_MultPop2020-02-16.csv")
+#BurnIn_BW <- read.csv("BurnIn_BWpop2020-02-16.csv")
 
 BurnIn <- list(SPFpop = BurnIn_SPF, ProdPop = BurnIn_Prod, MultPop = BurnIn_Mult, BWpop = BurnIn_BW)
 
@@ -214,7 +214,7 @@ for (i in 1:10) {
       
       BWpop <- rbind.fill(BWpop, Mult_BW_Fem, SPF_BWpop_Males) ## put MultPop females & SPFpopT into BW population
       
-      BW_Fem_Breed <- BWpop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_n(20834, merit)
+      BW_Fem_Breed <- BWpop %>% filter(sex == "F") %>% filter(age >= AgeFirstMate & age %% FarrowInt == rem) %>% top_n(18000, merit)
       
       BW_Males <- BWpop %>% filter(sex == "M") %>% filter(age >= AgeFirstMate) %>% top_n(1000, merit) ## merit selection on males put into BW pop initially
       
